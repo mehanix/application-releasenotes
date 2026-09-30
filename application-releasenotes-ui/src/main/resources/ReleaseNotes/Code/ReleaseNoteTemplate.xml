@@ -47,9 +47,11 @@
 
 {{releasenotechanges/}}
 
+= Translations =
+
+{{releasenotetranslators/}}
+
 = Credits =
 
-{{releasenotecontributors/}}
-
-{{releasenotetranslators/}}</content>
+{{releasenotecontributors/}}</content>
 </xwikidoc>

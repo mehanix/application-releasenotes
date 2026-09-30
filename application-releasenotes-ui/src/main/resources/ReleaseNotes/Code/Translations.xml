@@ -195,10 +195,7 @@ releasenotes.contributors.submit=Add contributors
 
 releasenotes.translators.intro=This release is available in the following languages:
 releasenotes.translators.notGenerated=The list of translated languages has not been generated yet.
-releasenotes.translators.languages.label=Translated languages
-releasenotes.translators.languages.hint=Comma-separated or one per line. Saving replaces the whole list.
-releasenotes.translators.submit=Save languages
-releasenotes.translators.saveComment=Set the translated languages
+releasenotes.translators.submit=Add translated languages
 
 # Release change page and its edit form
 

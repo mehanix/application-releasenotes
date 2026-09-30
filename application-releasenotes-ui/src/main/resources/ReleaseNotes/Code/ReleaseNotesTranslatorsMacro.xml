@@ -160,33 +160,6 @@
 #set ($translatorsSpaceReference = $services.model.createSpaceReference('Translators', $rnSpaceReference))
 #set ($translatorsReference = $services.model.createDocumentReference('WebHome', $translatorsSpaceReference))
 #set ($translatorsDoc = $xwiki.getDocument($translatorsReference))
-## Bulk update: the form below posts the full list of languages back to this release note page, and that list
-## replaces the stored one, with one TranslatorsClass object per language.
-#set ($released = "$!doc.getValue('released')")
-#set ($canEditLanguages = $services.security.authorization.hasAccess('edit', $translatorsReference) &amp;&amp; $released != '1')
-#if ($request.method == 'POST' &amp;&amp; "$!request.action" == 'setTranslatedLanguages' &amp;&amp; $canEditLanguages &amp;&amp; $services.csrf.isTokenValid("$!request.form_token"))
-  #if ($translatorsDoc.isNew())
-    ## The page is created on the first save, with the envelope every release note entry carries.
-    #set ($entryObject = $translatorsDoc.newObject('ReleaseNotes.Code.EntryClass'))
-    #set ($discard = $entryObject.set('product', "$!doc.getValue('product')"))
-    #set ($discard = $entryObject.set('version', "$!doc.getValue('version')"))
-    #set ($discard = $entryObject.set('type', 'Translators'))
-    #set ($discard = $translatorsDoc.setHidden(true))
-  #end
-  #set ($discard = $translatorsDoc.removeObjects('ReleaseNotes.Code.TranslatorsClass'))
-  #set ($submittedLanguages = "$!request.languages")
-  #set ($addedLanguages = [])
-  #foreach ($submittedLanguage in $submittedLanguages.split('[,\r\n]+'))
-    #set ($name = $submittedLanguage.trim())
-    #if ($name != '' &amp;&amp; !$addedLanguages.contains($name))
-      #set ($discard = $addedLanguages.add($name))
-      #set ($languageObject = $translatorsDoc.newObject('ReleaseNotes.Code.TranslatorsClass'))
-      #set ($discard = $languageObject.set('language', $name))
-    #end
-  #end
-  #set ($discard = $translatorsDoc.save($services.localization.render('releasenotes.translators.saveComment')))
-  $response.sendRedirect($doc.getURL('view'))
-#end
 #set ($languageObjects = $translatorsDoc.getObjects("ReleaseNotes.Code.TranslatorsClass"))
 ## Sort the language names alphabetically, ignoring case, before rendering them.
 #set ($sortedLanguages = [])
@@ -213,25 +186,33 @@
 
 #end
 ## Edit affordance: only for editors on a not-yet-released note, mirroring the contributors macro.
-## Bulk edit form, always shown to editors of a not-yet-released note, pre-filled with the current list.
-#if ($canEditLanguages)
-#set ($currentLanguages = $stringtool.join($sortedLanguages, ', '))
+#set ($released = "$!doc.getValue('released')")
+#if ($hasEdit &amp;&amp; $released != '1')
+#set ($product = "$!doc.getValue('product')")
+#set ($version = "$!doc.getValue('version')")
+#if (!$languageObjects.isEmpty())
+## Present: a pencil edit link opening the Translators page in edit mode.
+#set ($editText = $services.localization.render('edit'))
+#set ($iconHTML = $services.icon.renderHTML('pencil'))
+#set ($hrefAttribute = "$translatorsDoc.getURL('edit', ""editor=inline&amp;xredirect=$doc.getURL('view')"")")
+{{html clean="false"}}&lt;a class="edit_section" role="button" title="$editText" href="$hrefAttribute"&gt;${iconHTML}&lt;span class="sr-only"&gt;$editText&lt;/span&gt;&lt;/a&gt;{{/html}}
+#else
+## Absent: an "Add translated languages" button opening the Translators page in inline mode from the template.
 {{html clean="false"}}
-&lt;form action="$doc.getURL('view')" method="post" class="xform"&gt;
-  &lt;input type="hidden" name="action" value="setTranslatedLanguages"/&gt;
-  &lt;input type="hidden" name="form_token" value="$!escapetool.xml($services.csrf.token)"/&gt;
-  &lt;dl&gt;
-    &lt;dt&gt;
-      &lt;label for="releasenotes-translated-languages"&gt;$escapetool.xml($services.localization.render('releasenotes.translators.languages.label'))&lt;/label&gt;
-      &lt;span class="xHint"&gt;$escapetool.xml($services.localization.render('releasenotes.translators.languages.hint'))&lt;/span&gt;
-    &lt;/dt&gt;
-    &lt;dd&gt;&lt;textarea id="releasenotes-translated-languages" name="languages" rows="3"&gt;$escapetool.xml($currentLanguages)&lt;/textarea&gt;&lt;/dd&gt;
-  &lt;/dl&gt;
+&lt;form action="$translatorsDoc.getURL('edit')" method="get"&gt;
+  &lt;input type="hidden" name="editor" value="inline"/&gt;
+  &lt;input type="hidden" name="xhidden" value="1"/&gt;
+  &lt;input type="hidden" name="template" value="ReleaseNotes.Code.TranslatorsTemplate"/&gt;
+  &lt;input type="hidden" name="product" value="$escapetool.xml($product)"/&gt;
+  &lt;input type="hidden" name="version" value="$escapetool.xml($version)"/&gt;
+  &lt;input type="hidden" name="type" value="Translators"/&gt;
+  &lt;input type="hidden" name="xredirect" value="$escapetool.xml($doc.getURL('view'))"/&gt;
   &lt;span class="buttonwrapper"&gt;
     &lt;input class="button" type="submit" value="$escapetool.xml($services.localization.render('releasenotes.translators.submit'))"/&gt;
   &lt;/span&gt;
 &lt;/form&gt;
 {{/html}}
+#end
 #end
 {{/velocity}}
 </code>
